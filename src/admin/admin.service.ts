@@ -9,4 +9,7 @@ export class AdminService {
   getAdminId(id: number): string {
     return `Admin ID: ${id}`;
   }
+  getAll():string{
+    
+  }
 }
