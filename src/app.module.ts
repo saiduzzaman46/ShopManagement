@@ -1,15 +1,32 @@
 import { Module } from '@nestjs/common';
 import { AdminModule } from './admin/admin.module';
-import { SellerController } from './seller/seller.controller';
 import { SellerModule } from './seller/seller.module';
-import { UserController } from './user/user.controller';
-import { UserModule } from './user/user.module';
-import { CustomerController } from './customer/customer.controller';
-import { CustomerModule } from './customer/customer.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 @Module({
-  imports: [AdminModule, UserModule, CustomerModule],
-  controllers: [UserController, CustomerController],
+  imports: [
+    AdminModule,
+    SellerModule,
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT),
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      autoLoadEntities: true,
+      synchronize: true,
+      ssl: true,
+      extra: {
+        ssl: {
+          rejectUnauthorized: false,
+        },
+      },
+    }),
+  ],
+  controllers: [],
   providers: [],
 })
 export class AppModule {}
