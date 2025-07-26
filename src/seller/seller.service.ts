@@ -4,6 +4,7 @@ import { Product } from './product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UpdateProductDto } from './dto/update.product.dto';
+import { CreateSellerDto } from './dto/create.seller.dto';
 
 @Injectable()
 export class SellerService {
@@ -12,6 +13,12 @@ export class SellerService {
     private readonly productRepository: Repository<Product>,
   ) {}
 
+  //👉 Seller-related methods
+  singnupSeller(createSellerDto: CreateSellerDto): CreateSellerDto {
+    return createSellerDto;
+  }
+
+  //👉 Product-related methods
   getProducts() {
     return this.productRepository.find({ order: { productId: 'ASC' } });
   }
