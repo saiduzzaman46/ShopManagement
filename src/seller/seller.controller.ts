@@ -4,126 +4,68 @@ import {
   Controller,
   Delete,
   Get,
-  Param,
-  ParseIntPipe,
-  Patch,
+  NotFoundException,
   Post,
-  UploadedFile,
+  Query,
   UploadedFiles,
   UseInterceptors,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { SellerService } from './seller.service';
-import { CreateProductDto } from './dto/create.product.dto';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage, MulterError } from 'multer';
-import { UpdateProductDto } from './dto/update.product.dto';
-import { Product } from './product.entity';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { CreateSellerDto } from './dto/create.seller.dto';
+import { FileCleanupInterceptor } from '../utils/file-cleanup.interceptor';
+import { insertFile } from 'src/utils/multer.util';
+import { Seller } from './entity/create.seller.entity';
 
 @Controller('seller')
 export class SellerController {
   constructor(private readonly sellerService: SellerService) {}
 
-  //👉 Seller-related routes
+  // 👉 Seller-related route
   @Post('signup')
-  @UsePipes(new ValidationPipe({ transform: true }))
   @UseInterceptors(
-    FileInterceptor('nidImage', {
-      fileFilter: (req, file, cb) => {
-        if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
-          cb(null, true);
-        else {
-          cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
-        }
-      },
-      limits: { fileSize: 1048576 * 2 }, // 2MB limit
-      storage: diskStorage({
-        destination: './uploads/sellerNID',
-        filename: function (req, file, cb) {
-          cb(null, Date.now() + file.originalname);
-        },
-      }),
-    }),
+    FilesInterceptor(
+      'nidImage',
+      2,
+      insertFile(
+        './uploads/sellerNID',
+        /\.(jpg|jpeg|png)$/i,
+        2 * 1024 * 1024,
+        'jpg, jpeg, png, webp',
+      ),
+    ),
+    new FileCleanupInterceptor('./uploads/sellerNID'),
   )
-  creareSeller(
-    @UploadedFile() nidImage: Express.Multer.File,
+  signupSeller(
     @Body() createSellerDto: CreateSellerDto,
-  ) {
-    if (!nidImage) {
+    @UploadedFiles() nidImage: Express.Multer.File[],
+  ): Promise<Seller> {
+    if (!nidImage || nidImage.length === 0) {
       throw new BadRequestException('NID image is required');
     }
-    createSellerDto.nidImage = nidImage.filename;
-    return this.sellerService.creareSeller(createSellerDto);
+
+    createSellerDto.nidImage = nidImage.map((image) => image.filename);
+    return this.sellerService.singnupSeller(createSellerDto);
+  }
+  @Get()
+  async findSellers(@Query() query: any) {
+    const sellers = await this.sellerService.getFilteredSellers(query);
+    if (!sellers || sellers.length === 0) {
+      return { message: 'No sellers found' };
+    }
+    return sellers;
   }
 
-  //👉 Product-related routes
-  @Get('products')
-  getProducts(): Promise<Product[]> {
-    return this.sellerService.getProducts();
-  }
-  @Get('products/:productId')
-  getImagesByProductId(
-    @Param('productId', ParseIntPipe) productId: number,
-  ): Promise<{ url: string; filename: string }[]> {
-    return this.sellerService.getImagesByProductId(productId);
-  }
+  @Delete()
+  async deleteSellerByUsername(
+    @Query('username') username: string,
+  ): Promise<{ message: string }> {
+    const result = await this.sellerService.deleteSellerByUsername(username);
 
-  @Post('products/add')
-  @UsePipes(new ValidationPipe())
-  createProduct(@Body() createProductDto: CreateProductDto): Promise<Product> {
-    return this.sellerService.createProduct(createProductDto);
-  }
-
-  @Post('products/upload')
-  @UsePipes(new ValidationPipe({ transform: true }))
-  @UseInterceptors(
-    FilesInterceptor('files', 5, {
-      fileFilter: (req, file, cb) => {
-        if (file.originalname.match(/\.(jpg|webp|png|jpeg)$/)) {
-          cb(null, true);
-        } else {
-          cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'files'), false);
-        }
-      },
-      limits: { fileSize: 1048576 },
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          cb(null, Date.now() + '-' + file.originalname);
-        },
-      }),
-    }),
-  )
-  uploadFiles(
-    @UploadedFiles() files: Express.Multer.File[],
-    @Body() createProductDto: CreateProductDto,
-  ): Promise<Product> {
-    if (!files) {
-      throw new MulterError('LIMIT_UNEXPECTED_FILE', 'files');
+    if (!result) {
+      throw new NotFoundException('Seller not found');
     }
 
-    // Assign all filenames to the images array
-    createProductDto.images = files.map((file) => file.filename);
-    return this.sellerService.createProduct(createProductDto);
-  }
-
-  @Patch('products/update/:productId')
-  @UsePipes(new ValidationPipe())
-  updateProduct(
-    @Param('productId', ParseIntPipe) productId: number,
-    @Body() updateProductDto: UpdateProductDto,
-  ): Promise<Product> {
-    return this.sellerService.updateProduct(productId, updateProductDto);
-  }
-
-  @Delete('products/delete/:productId')
-  deleteProductById(
-    @Param('productId', ParseIntPipe) productId: number,
-  ): Promise<{ message: string }> {
-    return this.sellerService.deleteProductById(productId).then(() => ({
-      message: 'Delete success',
-    }));
+    return { message: 'Seller deleted successfully' };
   }
 }

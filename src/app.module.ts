@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AdminModule } from './admin/admin.module';
 import { SellerModule } from './seller/seller.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ProductModule } from './seller/product/product.module';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -9,6 +10,7 @@ dotenv.config();
   imports: [
     AdminModule,
     SellerModule,
+    ProductModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -18,12 +20,9 @@ dotenv.config();
       database: process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: true,
-      ssl: true,
-      extra: {
-        ssl: {
-          rejectUnauthorized: false,
-        },
-      },
+      // ssl: {
+      //   rejectUnauthorized: false,
+      // },
     }),
   ],
   controllers: [],

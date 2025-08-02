@@ -1,79 +1,60 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateProductDto } from './dto/create.product.dto';
-import { Product } from './product.entity';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UpdateProductDto } from './dto/update.product.dto';
+import { ILike, Repository } from 'typeorm';
 import { CreateSellerDto } from './dto/create.seller.dto';
+import { Seller } from './entity/create.seller.entity';
+import * as bcrypt from 'bcrypt';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class SellerService {
   constructor(
-    @InjectRepository(Product)
-    private readonly productRepository: Repository<Product>,
+    @InjectRepository(Seller)
+    private readonly sellerRepository: Repository<Seller>,
   ) {}
 
   //👉 Seller-related methods
-  creareSeller(createSellerDto: CreateSellerDto): CreateSellerDto {
-    return createSellerDto;
-  }
+  async singnupSeller(createSellerDto: CreateSellerDto): Promise<Seller> {
+    const saltRounds = 10;
 
-  //👉 Product-related methods
-  getProducts(): Promise<Product[]> {
-    return this.productRepository.find({ order: { productId: 'ASC' } });
-  }
+    const hashedPassword = await bcrypt.hash(
+      createSellerDto.password,
+      saltRounds,
+    );
 
-  async getImagesByProductId(
-    productId: number,
-  ): Promise<{ url: string; filename: string }[]> {
-    const product = await this.productRepository.findOne({
-      where: { productId },
-      select: ['productId', 'images'],
+    const seller = this.sellerRepository.create({
+      ...createSellerDto,
+      password: hashedPassword,
     });
-
-    if (!product) {
-      throw new Error('Product not found');
-    }
-
-    return (product.images ?? []).map((image) => ({
-      url: `/uploads/${image}`,
-      filename: image,
-    }));
+    return this.sellerRepository.save(seller);
   }
 
-  async updateProduct(
-    productId: number,
-    updateProductDto: UpdateProductDto,
-  ): Promise<Product> {
-    const product = await this.productRepository.findOneBy({ productId });
-
-    if (!product) {
-      throw new NotFoundException('Product not found');
+  async getFilteredSellers(query: any): Promise<any> {
+    // const queryObj = { ...query };
+    let sellers = await this.sellerRepository.find();
+    // find by fullName
+    if (query.fullName) {
+      sellers = await this.sellerRepository.find({
+        where: {
+          fullName: ILike(`%${query.fullName}%`),
+        },
+      });
     }
-
-    await this.productRepository.update(productId, updateProductDto);
-
-    const updatedProduct = await this.productRepository.findOneBy({
-      productId,
-    });
-
-    if (!updatedProduct) {
-      throw new NotFoundException('Updated product not found');
+    // find by username
+    if (query.username) {
+      sellers = await this.sellerRepository.find({
+        where: { username: ILike(query.username) },
+      });
     }
-
-    return updatedProduct;
+    return instanceToPlain(sellers);
   }
 
-  async createProduct(createProductDto: CreateProductDto): Promise<Product> {
-    const product = this.productRepository.create(createProductDto);
-    return await this.productRepository.save(product);
-  }
+  async deleteSellerByUsername(username: string): Promise<boolean> {
+    const seller = await this.sellerRepository.findOneBy({ username });
 
-  async deleteProductById(productId: number): Promise<Product> {
-    const product = await this.productRepository.findOneBy({ productId });
-    if (!product) {
-      throw new Error('Product not found');
-    }
-    return this.productRepository.remove(product);
+    if (!seller) return false;
+
+    await this.sellerRepository.remove(seller);
+    return true;
   }
 }
