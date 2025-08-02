@@ -4,17 +4,34 @@ import {
   Matches,
   IsEmail,
   IsOptional,
+  MaxLength,
 } from 'class-validator';
 
 export class CreateSellerDto {
   @IsString()
   @IsNotEmpty()
   @Matches(/^[A-Za-z\s]+$/, { message: 'Name must contain only alphabets' })
-  name: string;
+  @MaxLength(150, { message: 'Name is too long' })
+  fullName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100, { message: 'Username is too long' })
+  username: string;
 
   @IsEmail({}, { message: 'Invalid email format' })
   @Matches(/\.xyz$/, { message: 'Email must end with .xyz' })
-  email: string;
+  @IsOptional()
+  email?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^\+?\d{11,13}$/, { message: 'Invalid phone number' })
+  phone: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password: string;
 
   @IsString()
   @Matches(/^\d{10}$|^\d{13}$/, {
@@ -25,11 +42,6 @@ export class CreateSellerDto {
   @IsString()
   @IsOptional()
   nidImage?: string[];
-
-  @IsString()
-  @IsNotEmpty()
-  @Matches(/^\+?\d{11,13}$/, { message: 'Invalid phone number' })
-  phone: string;
 
   @IsString()
   @IsOptional()

@@ -1,16 +1,15 @@
-import { 
-  IsEmail, 
-  Matches, 
-  IsNotEmpty, 
-  MinLength, 
-  IsIn, 
-  IsNumberString, 
-  IsOptional, 
-  IsString 
+import {
+  IsEmail,
+  Matches,
+  IsNotEmpty,
+  MinLength,
+  IsIn,
+  IsNumberString,
+  IsOptional,
+  IsString,
 } from 'class-validator';
 
 export class CreateCustomerDto {
-  
   @IsNotEmpty()
   @IsEmail({}, { message: 'Invalid email format' })
   @Matches(/@aiub\.edu$/, { message: 'Email must be from aiub.edu domain' })
@@ -18,7 +17,9 @@ export class CreateCustomerDto {
 
   @IsNotEmpty()
   @MinLength(6, { message: 'Password must be at least 6 characters long' })
-  @Matches(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
+  @Matches(/[A-Z]/, {
+    message: 'Password must contain at least one uppercase letter',
+  })
   password: string;
 
   @IsNotEmpty()
@@ -31,9 +32,9 @@ export class CreateCustomerDto {
 
   @IsOptional()
   @IsString()
-  address?:string;
+  address?: string;
 
   @IsOptional()
   @IsString()
-  profilePic?: string;  
+  profilePic?: string;
 }

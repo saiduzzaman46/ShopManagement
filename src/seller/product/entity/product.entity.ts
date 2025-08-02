@@ -1,9 +1,11 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
+import { BeforeInsert } from 'typeorm';
+import { Seller } from 'src/seller/entity/create.seller.entity';
 
 @Entity('products')
 export class Product {
   @PrimaryColumn()
-  productId: number;
+  productId: string;
 
   @Column()
   title: string;
@@ -35,4 +37,16 @@ export class Product {
 
   @Column({ nullable: true })
   tags?: string;
+
+  @ManyToOne(() => Seller, (seller) => seller.products, { onDelete: 'CASCADE' })
+  seller: Seller;
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.productId) {
+      const timestamp = Date.now().toString().substring(6);
+      const random = Math.random().toString(36).substring(2, 10);
+      this.productId = `${timestamp}${random}`;
+    }
+  }
 }
