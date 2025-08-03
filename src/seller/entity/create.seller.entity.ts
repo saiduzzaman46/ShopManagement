@@ -4,9 +4,11 @@ import {
   BeforeInsert,
   PrimaryColumn,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { Product } from '../product/entity/product.entity';
 import { Exclude } from 'class-transformer';
+import { User } from '../../auth/entity/user.entity';
 
 @Entity('sellers')
 export class Seller {
@@ -46,6 +48,12 @@ export class Seller {
 
   @OneToMany(() => Product, (product) => product.seller)
   products: Product[];
+
+  @OneToOne(() => User, (user) => user.seller, {
+    cascade: true,
+    onDelete: 'CASCADE',
+  })
+  user: User;
 
   @BeforeInsert()
   generateId() {
