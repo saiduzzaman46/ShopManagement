@@ -3,6 +3,7 @@ import { AdminModule } from './admin/admin.module';
 import { SellerModule } from './seller/seller.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductModule } from './seller/product/product.module';
+import { AuthModule } from './auth/auth.module';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -24,6 +25,7 @@ dotenv.config();
       //   rejectUnauthorized: false,
       // },
     }),
+    AuthModule,
   ],
   controllers: [],
   providers: [],

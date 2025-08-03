@@ -9,6 +9,8 @@ import {
   Query,
   UploadedFiles,
   UseInterceptors,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { SellerService } from './seller.service';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -23,6 +25,7 @@ export class SellerController {
 
   // 👉 Seller-related route
   @Post('signup')
+  @UsePipes(new ValidationPipe({ transform: true }))
   @UseInterceptors(
     FilesInterceptor(
       'nidImage',
