@@ -7,6 +7,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+
 import { CustomerService } from './customer.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage, MulterError } from 'multer';
@@ -26,7 +27,7 @@ export class CustomerController {
         else {
           cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
         }
-      },
+      }, 
       limits: { fileSize: 1048576 },
       storage: diskStorage({
         destination: './uploads/customer',
