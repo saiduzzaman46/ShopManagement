@@ -1,24 +1,20 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToOne,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, Column, OneToOne, CreateDateColumn, PrimaryColumn, BeforeInsert } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 import { Seller } from 'src/seller/entity/create.seller.entity';
+import { Exclude } from 'class-transformer';
 // import { Customer } from 'src/customers/customer.entity';
 // import { Admin } from 'src/admins/admin.entity';
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryColumn('uuid')
+  id: string;
 
   @Column({ unique: true })
   email: string;
 
   @Column()
+  @Exclude()
   password: string;
 
   @Column()
@@ -27,10 +23,20 @@ export class User {
   @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  updateAt: Date;
 
-  @OneToOne(() => Seller, (seller) => seller.user)
+  // user.entity.ts
+  @Column({ type: 'varchar', nullable: true })
+  resetCode?: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  resetCodeExpires?: Date | null;
+
+  @OneToOne(() => Seller, (seller) => seller.user, {
+    cascade: true,
+    eager: true,
+  })
   seller: Seller;
 
   //   @OneToOne(() => Customer, (customer) => customer.user)
@@ -38,4 +44,11 @@ export class User {
 
   //   @OneToOne(() => Admin, (admin) => admin.user)
   //   admin: Admin;
+
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv4();
+    }
+  }
 }

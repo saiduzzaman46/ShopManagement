@@ -2,8 +2,6 @@ import { Expose } from 'class-transformer';
 
 export class SellerResponseDto {
   @Expose()
-  id: string;
-  @Expose()
   fullName: string;
   @Expose()
   username: string;
@@ -11,6 +9,8 @@ export class SellerResponseDto {
   email?: string;
   @Expose()
   phone: string;
+  @Expose()
+  role: string;
   @Expose()
   nid: string;
   @Expose()

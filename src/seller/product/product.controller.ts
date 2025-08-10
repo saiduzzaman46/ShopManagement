@@ -1,85 +1,95 @@
 import {
-  BadRequestException,
-  Body,
   Controller,
-  Get,
-  Param,
-  Patch,
   Post,
-  UploadedFiles,
+  UseGuards,
   UseInterceptors,
-  UsePipes,
-  ValidationPipe,
+  Request,
+  Body,
+  UploadedFiles,
+  BadRequestException,
+  Get,
+  Patch,
+  Param,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
-import { CreateProductDto } from './dto/create.product.dto';
+import { Roles } from 'src/auth/roles.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { insertFile } from 'src/utils/multer.util';
 import { FileCleanupInterceptor } from 'src/utils/file-cleanup.interceptor';
+import { Product } from './entity/product.entity';
+import { CreateProductDto } from './dto/create.product.dto';
+import { AuthGuard } from 'src/auth/auth.guard';
+import { RolesGuard } from 'src/auth/roles.guard';
 
 @Controller('product')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
-  // 👉 Product-related route
-  @Get('products')
-  getProducts() {
-    return this.productService.getProducts();
-  }
-  @Get('/:productId')
-  getImagesByProductId(@Param('productId') productId: string) {
-    return this.productService.getImagesByProductId(productId);
-  }
-
-  @Post('/add')
-  createProduct(@Body() createProductDto: CreateProductDto) {
-    return this.productService.createProduct(createProductDto);
-  }
-
-  @Patch('update/:productId')
-  updateProduct(
-    @Param('productId') productId: string,
-    @Body() createProductDto: CreateProductDto,
-  ) {
-    return this.productService.updateProduct(productId, createProductDto);
-  }
-
-  @Post('upload')
-  @UsePipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  )
+  @Post('addproduct')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('seller')
   @UseInterceptors(
     FilesInterceptor(
-      'files',
+      'images',
       5,
       insertFile(
-        './uploads/products',
+        './uploads/productImages',
         /\.(jpg|jpeg|png|webp)$/i,
-        2 * 1024 * 1024,
+        5 * 1024 * 1024,
         'jpg, jpeg, png, webp',
       ),
     ),
-    new FileCleanupInterceptor('./uploads/products'),
+    new FileCleanupInterceptor('./uploads/productImages'),
   )
-  uploadFiles(
-    @UploadedFiles() files: Express.Multer.File[],
+  async createProduct(
+    @Request() req,
     @Body() createProductDto: CreateProductDto,
-  ) {
-    if (!files) {
-      throw new BadRequestException('No files uploaded');
+    @UploadedFiles() images: Express.Multer.File[],
+  ): Promise<Product> {
+    if (!images || images.length === 0) {
+      throw new BadRequestException('At least one product image is required');
     }
 
-    // Assign all filenames to the images array
-    createProductDto.images = files.map((file) => file.filename);
-    return this.productService.createProduct(createProductDto);
+    createProductDto.images = images.map((image) => image.filename);
+
+    return this.productService.createProduct(createProductDto, req.user.id);
   }
 
-  @Post('add')
-  addProduct(@Body() createProductDto: CreateProductDto) {
-    return this.productService.createProduct(createProductDto);
+  @Patch('updateproduct/:id')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('seller')
+  @UseInterceptors(
+    FilesInterceptor(
+      'images',
+      5,
+      insertFile(
+        './uploads/productImages',
+        /\.(jpg|jpeg|png|webp)$/i,
+        5 * 1024 * 1024,
+        'jpg, jpeg, png, webp',
+      ),
+    ),
+    new FileCleanupInterceptor('./uploads/productImages'),
+  )
+  async updateProduct(
+    @Request() req,
+    @Body() updateProductDto: Partial<CreateProductDto>,
+    @Param('id') productId: string,
+    @UploadedFiles() images: Express.Multer.File[],
+  ): Promise<Product> {
+    updateProductDto.images = images.map((image) => image.filename);
+    return this.productService.updateProduct(productId, updateProductDto, req.user.id);
   }
+
+  @Get('myproducts')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('seller')
+  async getMyProducts(@Request() req): Promise<Product[]> {
+    return this.productService.getMyProducts(req.user.id);
+  }
+
+  // @Get('all')
+  // async getAllProducts() {
+  //   return this.productService.getAllProducts();
+  // }
 }
