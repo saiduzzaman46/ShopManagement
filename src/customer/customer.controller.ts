@@ -1,7 +1,13 @@
 import {
   Body,
   Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
   UsePipes,
@@ -18,7 +24,7 @@ export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   @Post('create')
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe({ transform: true }))
   @UseInterceptors(
     FileInterceptor('profilePic', {
       fileFilter: (req, file, cb) => {
@@ -27,7 +33,7 @@ export class CustomerController {
         else {
           cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
         }
-      }, 
+      },
       limits: { fileSize: 1048576 },
       storage: diskStorage({
         destination: './uploads/customer',
@@ -43,5 +49,20 @@ export class CustomerController {
   ) {
     createCustomerDto.profilePic = profilePic?.filename;
     return this.customerService.createCustomer(createCustomerDto);
+  }
+
+  @Patch('updatephone/:id')
+  updatePhone(@Param('id') id: number, @Body('phone') phone: number) {
+    return this.customerService.updatePhoneNumber(id, phone);
+  }
+
+  @Get('fullnamenull')
+  getCustomerNullFullName() {
+    return this.customerService.getCustomerNullFullName();
+  }
+
+  @Delete('deletecustomer')
+  deleteCustomer(@Query('id', ParseIntPipe) id: number) {
+    return this.customerService.deleteCustomer(id);
   }
 }

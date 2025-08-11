@@ -1,11 +1,13 @@
+import { Type } from 'class-transformer';
 import {
   IsString,
   IsNumber,
   IsOptional,
-  IsEnum,
+  IsNotEmpty,
   IsArray,
-  MaxLength,
+  IsEnum,
   Min,
+  MaxLength,
 } from 'class-validator';
 
 enum ProductStatus {
@@ -14,30 +16,30 @@ enum ProductStatus {
   REJECTED = 'rejected',
 }
 
-export class UpdateProductDto {
+export class CreateProductDto {
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   @MaxLength(100)
-  title?: string;
+  title: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(1000)
   description?: string;
 
+  @Type(() => Number)
   @IsNumber()
-  @IsOptional()
   @Min(0)
-  price?: number;
+  price: number;
 
+  @Type(() => Number)
   @IsNumber()
-  @IsOptional()
   @Min(0)
-  quantity?: number;
+  quantity: number;
 
   @IsString()
-  @IsOptional()
-  categoryId?: string;
+  @IsNotEmpty()
+  categoryId: string;
 
   @IsArray()
   @IsOptional()
@@ -54,4 +56,8 @@ export class UpdateProductDto {
   @IsString()
   @IsOptional()
   tags?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  sellerId: string;
 }
