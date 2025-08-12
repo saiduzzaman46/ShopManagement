@@ -1,12 +1,19 @@
 import {
   Body,
   Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+
 import { CustomerService } from './customer.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage, MulterError } from 'multer';
@@ -17,7 +24,7 @@ export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   @Post('create')
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe({ transform: true }))
   @UseInterceptors(
     FileInterceptor('profilePic', {
       fileFilter: (req, file, cb) => {
@@ -41,5 +48,20 @@ export class CustomerController {
   ) {
     createCustomerDto.profilePic = profilePic?.filename;
     return this.customerService.createCustomer(createCustomerDto);
+  }
+
+  @Patch('updatephone/:id')
+  updatePhone(@Param('id') id: number, @Body('phone') phone: number) {
+    return this.customerService.updatePhoneNumber(id, phone);
+  }
+
+  @Get('fullnamenull')
+  getCustomerNullFullName() {
+    return this.customerService.getCustomerNullFullName();
+  }
+
+  @Delete('deletecustomer')
+  deleteCustomer(@Query('id', ParseIntPipe) id: number) {
+    return this.customerService.deleteCustomer(id);
   }
 }

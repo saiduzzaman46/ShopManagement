@@ -4,11 +4,13 @@ import { SellerModule } from './seller/seller.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductModule } from './seller/product/product.module';
 import * as dotenv from 'dotenv';
+import { CustomerModule } from './customer/customer.module';
 dotenv.config();
 
 @Module({
   imports: [
     AdminModule,
+    CustomerModule,
     SellerModule,
     ProductModule,
     TypeOrmModule.forRoot({
@@ -20,9 +22,9 @@ dotenv.config();
       database: process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: true,
-      // ssl: {
-      //   rejectUnauthorized: false,
-      // },
+      ssl: {
+        rejectUnauthorized: false,
+      },
     }),
   ],
   controllers: [],
