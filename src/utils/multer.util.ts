@@ -14,12 +14,7 @@ export function insertFile(
       if (allowedExtensions.test(file.originalname)) {
         next(null, true);
       } else {
-        next(
-          new BadRequestException(
-            `Invalid file type. Allowed types: ${message}`,
-          ) as any,
-          false,
-        );
+        next(new BadRequestException(`Invalid file type. Allowed types: ${message}`) as any, false);
       }
     },
     limits: { fileSize: maxFileSize },

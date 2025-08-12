@@ -1,10 +1,5 @@
 // src/common/interceptors/file-cleanup.interceptor.ts
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import * as fs from 'fs';
@@ -21,11 +16,7 @@ export class FileCleanupInterceptor implements NestInterceptor {
 
     if (Array.isArray(request.files)) {
       uploadedFiles = request.files;
-    } else if (
-      request.file &&
-      typeof request.file === 'object' &&
-      'filename' in request.file
-    ) {
+    } else if (request.file && typeof request.file === 'object' && 'filename' in request.file) {
       uploadedFiles = [request.file];
     } else if (
       request.files &&

@@ -5,6 +5,7 @@ import {
   IsEmail,
   IsOptional,
   MaxLength,
+  IsArray,
 } from 'class-validator';
 
 export class CreateSellerDto {
@@ -20,17 +21,17 @@ export class CreateSellerDto {
   username: string;
 
   @IsEmail({}, { message: 'Invalid email format' })
-  @Matches(/\.xyz$/, { message: 'Email must end with .xyz' })
-  @IsOptional()
-  email?: string;
+  @IsNotEmpty()
+  email: string;
 
   @IsString()
   @IsNotEmpty()
-  @Matches(/^\+?\d{11,13}$/, { message: 'Invalid phone number' })
+  @Matches(/^\+?\d{11}$/, { message: 'Invalid phone number' })
   phone: string;
 
   @IsString()
   @IsNotEmpty()
+  @Matches(/^.{8,}$/, { message: 'Password must be at least 8 characters long' })
   password: string;
 
   @IsString()
@@ -39,7 +40,8 @@ export class CreateSellerDto {
   })
   nid: string;
 
-  @IsString()
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
   nidImage?: string[];
 

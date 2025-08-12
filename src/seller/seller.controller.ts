@@ -2,30 +2,41 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Delete,
   Get,
-  NotFoundException,
   Post,
-  Query,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
-  UsePipes,
-  ValidationPipe,
+  Request,
+  Patch,
+  Delete,
 } from '@nestjs/common';
 import { SellerService } from './seller.service';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { CreateSellerDto } from './dto/create.seller.dto';
+import { CreateSellerDto } from './dto/seller.create.dto';
 import { FileCleanupInterceptor } from '../utils/file-cleanup.interceptor';
 import { insertFile } from 'src/utils/multer.util';
 import { Seller } from './entity/create.seller.entity';
+import { AuthGuard } from 'src/auth/auth.guard';
+import { UpdateSellerDto } from './dto/seller.update.dto';
+import { SellerResponseDto } from './dto/seller.response.dto';
+import { UpdatePasswordDto } from '../auth/dto/updatePassword.dto';
+import { RolesGuard } from 'src/auth/roles.guard';
+import { Roles } from 'src/auth/roles.decorator';
+import { AuthService } from 'src/auth/auth.service';
+// import { ProductService } from './product/product.service';
+// import { CreateProductDto } from './product/dto/create.product.dto';
+// import { Product } from './product/entity/product.entity';
 
 @Controller('seller')
 export class SellerController {
-  constructor(private readonly sellerService: SellerService) {}
+  constructor(
+    private readonly sellerService: SellerService,
+    private readonly authService: AuthService,
+  ) {}
 
-  // 👉 Seller-related route
+  // 👉 Seller-profile route
   @Post('signup')
-  @UsePipes(new ValidationPipe({ transform: true }))
   @UseInterceptors(
     FilesInterceptor(
       'nidImage',
@@ -48,27 +59,46 @@ export class SellerController {
     }
 
     createSellerDto.nidImage = nidImage.map((image) => image.filename);
-    return this.sellerService.singnupSeller(createSellerDto);
-  }
-  @Get()
-  async findSellers(@Query() query: any) {
-    const sellers = await this.sellerService.getFilteredSellers(query);
-    if (!sellers || sellers.length === 0) {
-      return { message: 'No sellers found' };
-    }
-    return sellers;
+    return this.sellerService.signupSeller(createSellerDto);
   }
 
-  @Delete()
-  async deleteSellerByUsername(
-    @Query('username') username: string,
+  @Get('profile')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('seller')
+  getProfile(@Request() req): Promise<SellerResponseDto> {
+    const id: string = req.user.id;
+    return this.sellerService.getProfile(id);
+  }
+
+  @Patch('profile/update')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('seller')
+  async updateProfile(
+    @Request() req,
+    @Body() updateData: UpdateSellerDto,
+  ): Promise<SellerResponseDto> {
+    const id: string = req.user.id;
+    return this.sellerService.updateProfile(id, updateData);
+  }
+
+  @Patch('password/update')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('seller')
+  updatePassword(
+    @Request() req,
+    @Body() updatePasswordDto: UpdatePasswordDto,
   ): Promise<{ message: string }> {
-    const result = await this.sellerService.deleteSellerByUsername(username);
-
-    if (!result) {
-      throw new NotFoundException('Seller not found');
-    }
-
-    return { message: 'Seller deleted successfully' };
+    const id: string = req.user.id;
+    return this.authService.updatePassword(id, updatePasswordDto);
   }
+
+  @Delete('delete-account')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('seller')
+  async deleteAccount(@Request() req): Promise<{ message: string }> {
+    const id: string = req.user.id;
+    return this.authService.deleteAccount(id);
+  }
+
+  // 👉 Product-related routes
 }

@@ -1,10 +1,13 @@
-import { Column, Entity, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import { BeforeInsert } from 'typeorm';
 import { Seller } from 'src/seller/entity/create.seller.entity';
+import { v4 as uuidv4 } from 'uuid';
+import { Category } from '../../../admin/entity/categories.entity';
+import { Brand } from '../../../admin/entity/brand.entity';
 
 @Entity('products')
 export class Product {
-  @PrimaryColumn()
+  @PrimaryColumn('uuid')
   productId: string;
 
   @Column()
@@ -19,34 +22,31 @@ export class Product {
   @Column()
   quantity: number;
 
-  @Column()
-  categoryId: string;
-
   @Column('text', { array: true, nullable: true })
   images?: string[];
-
-  @Column({
-    type: 'enum',
-    enum: ['pending', 'approved', 'rejected'],
-    default: 'pending',
-  })
-  status?: string;
-
-  @Column({ nullable: true })
-  brand?: string;
 
   @Column({ nullable: true })
   tags?: string;
 
+  @CreateDateColumn()
+  createdAt: Date;
+
   @ManyToOne(() => Seller, (seller) => seller.products, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'sellerId' })
   seller: Seller;
+
+  @ManyToOne(() => Category, (category) => category.products, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'categoryId' })
+  category: Category | null;
+
+  @ManyToOne(() => Brand, (brand) => brand.products, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'brandId' })
+  brand: Brand | null;
 
   @BeforeInsert()
   generateId() {
     if (!this.productId) {
-      const timestamp = Date.now().toString().substring(6);
-      const random = Math.random().toString(36).substring(2, 10);
-      this.productId = `${timestamp}${random}`;
+      this.productId = uuidv4();
     }
   }
 }

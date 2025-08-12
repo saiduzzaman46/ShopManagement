@@ -12,6 +12,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
   await app.listen(port, () => {
     console.log(`The app runing on port ${port}`);
   });

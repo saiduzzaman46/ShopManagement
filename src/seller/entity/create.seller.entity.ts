@@ -5,14 +5,15 @@ import {
   PrimaryColumn,
   OneToMany,
   OneToOne,
+  JoinColumn,
 } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 import { Product } from '../product/entity/product.entity';
-import { Exclude } from 'class-transformer';
 import { User } from '../../auth/entity/user.entity';
 
 @Entity('sellers')
 export class Seller {
-  @PrimaryColumn()
+  @PrimaryColumn('uuid')
   id: string;
 
   @Column({ length: 150 })
@@ -21,15 +22,8 @@ export class Seller {
   @Column({ length: 100, unique: true })
   username: string;
 
-  @Column({ nullable: true })
-  email?: string;
-
   @Column()
   phone: string;
-
-  @Column()
-  @Exclude()
-  password: string;
 
   @Column()
   nid: string;
@@ -50,17 +44,15 @@ export class Seller {
   products: Product[];
 
   @OneToOne(() => User, (user) => user.seller, {
-    cascade: true,
     onDelete: 'CASCADE',
   })
+  @JoinColumn()
   user: User;
 
   @BeforeInsert()
   generateId() {
     if (!this.id) {
-      const timestamp = Date.now().toString().substring(6);
-      const random = Math.random().toString(36).substring(2, 10);
-      this.id = `${timestamp}${random}`;
+      this.id = uuidv4();
     }
   }
 }

@@ -1,48 +1,105 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entity/product.entity';
 import { CreateProductDto } from './dto/create.product.dto';
 import { Repository } from 'typeorm';
+import { Seller } from '../entity/create.seller.entity';
+import { Category } from 'src/admin/entity/categories.entity';
+import { Brand } from 'src/admin/entity/brand.entity';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(Seller)
+    private readonly sellerRepository: Repository<Seller>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(Brand)
+    private readonly brandRepository: Repository<Brand>,
   ) {}
 
-  getProducts() {
-    return this.productRepository.find({ order: { productId: 'ASC' } });
-  }
-
-  async getImagesByProductId(productId: string) {
-    const product = await this.productRepository.findOne({
-      where: { productId },
-      select: ['productId', 'images'],
+  async createProduct(createProductDto: CreateProductDto, userId: string): Promise<Product> {
+    const seller = await this.sellerRepository.findOne({
+      where: { user: { id: userId } },
+      select: ['id'],
     });
 
+    const category = createProductDto.categoryId
+      ? await this.categoryRepository.findOne({
+          where: { categoryId: createProductDto.categoryId },
+        })
+      : null;
+
+    const brand = createProductDto.brandId
+      ? await this.brandRepository.findOne({
+          where: { brandId: createProductDto.brandId },
+        })
+      : null;
+
+    if (!seller) {
+      throw new BadRequestException('Seller not found for the authenticated user.');
+    }
+    const product = this.productRepository.create({
+      ...createProductDto,
+      seller: { id: seller.id } as Seller,
+      category,
+      brand,
+    });
+
+    return await this.productRepository.save(product);
+  }
+
+  async updateProduct(
+    productId: string,
+    updateProductDto: Partial<CreateProductDto>,
+    userId: string,
+  ): Promise<Product> {
+    const seller = await this.sellerRepository.findOne({
+      where: { user: { id: userId } },
+      select: ['id'],
+    });
+
+    if (!seller) {
+      throw new BadRequestException('Seller not found for the authenticated user.');
+    }
+    console.log(seller);
+    const product = await this.productRepository.findOne({
+      where: {
+        productId,
+        seller: { id: seller.id },
+      },
+    });
     if (!product) {
-      throw new Error('Product not found');
+      throw new BadRequestException(
+        'Product not found or you are not authorized to update this product.',
+      );
     }
 
-    return (product.images ?? []).map((image) => ({
-      url: `/uploads/${image}`,
-      filename: image,
-    }));
+    Object.assign(product, updateProductDto);
+    return await this.productRepository.save(product);
   }
 
-  async updateProduct(productId: string, createProductDto: CreateProductDto) {
-    const product = await this.productRepository.findOneBy({ productId });
-    if (!product) {
-      throw new Error('Product not found');
+  async getMyProducts(userId: string): Promise<Product[]> {
+    const seller = await this.sellerRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['products', 'products.category', 'products.brand'],
+    });
+    if (!seller) {
+      throw new BadRequestException('Seller not found for the authenticated user.');
     }
-
-    Object.assign(product, createProductDto);
-    return this.productRepository.save(product);
+    // const products = seller.products.map((product) => ({
+    //   ...product,
+    //   categoryName: product.category?.name || null,
+    //   brandName: product.brand?.name || null,
+    // }));
+    return seller.products;
   }
 
-  createProduct(createProductDto: CreateProductDto) {
-    const product = this.productRepository.create(createProductDto);
-    return this.productRepository.save(product);
-  }
+  // async getAllProducts(): Promise<Product[]> {
+  //   return await this.productRepository.find({
+  //     relations: ['seller', 'category', 'brand'],
+  //   });
+  // }
 }

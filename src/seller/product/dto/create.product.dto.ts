@@ -5,16 +5,9 @@ import {
   IsOptional,
   IsNotEmpty,
   IsArray,
-  IsEnum,
   Min,
   MaxLength,
 } from 'class-validator';
-
-enum ProductStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-}
 
 export class CreateProductDto {
   @IsString()
@@ -24,7 +17,7 @@ export class CreateProductDto {
 
   @IsString()
   @IsOptional()
-  @MaxLength(1000)
+  @MaxLength(500)
   description?: string;
 
   @Type(() => Number)
@@ -37,27 +30,21 @@ export class CreateProductDto {
   @Min(0)
   quantity: number;
 
-  @IsString()
-  @IsNotEmpty()
-  categoryId: string;
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  categoryId?: number;
 
   @IsArray()
   @IsOptional()
   images?: string[];
 
-  @IsEnum(ProductStatus)
+  @Type(() => Number)
+  @IsNumber()
   @IsOptional()
-  status?: ProductStatus;
-
-  @IsString()
-  @IsOptional()
-  brand?: string;
+  brandId?: number;
 
   @IsString()
   @IsOptional()
   tags?: string;
-
-  @IsString()
-  @IsNotEmpty()
-  sellerId: string;
 }

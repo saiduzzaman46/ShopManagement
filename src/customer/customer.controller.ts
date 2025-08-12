@@ -28,8 +28,7 @@ export class CustomerController {
   @UseInterceptors(
     FileInterceptor('profilePic', {
       fileFilter: (req, file, cb) => {
-        if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/))
-          cb(null, true);
+        if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/)) cb(null, true);
         else {
           cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
         }
